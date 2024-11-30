@@ -3,11 +3,6 @@
 
 using namespace std;
 void part1(){
-    int a,b,c;
-
-    std::cin>>a>>b>>c;
-
-    std::cout<<"a: " << a << "; b: "<< b << "; c: "<<c;
 }
 
 void part2(){
