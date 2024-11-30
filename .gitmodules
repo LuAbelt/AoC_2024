@@ -1,3 +1,6 @@
 [submodule "external/AoC_Lib"]
 	path = external/AoC_Lib
 	url = git@github.com:LuAbelt/AoC_Lib.git
+[submodule "external/AoC-Inputs"]
+	path = external/AoC-Inputs
+	url = git@github.com:LuAbelt/AoC-Inputs.git
