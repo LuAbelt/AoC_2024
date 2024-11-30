@@ -1,0 +1,8 @@
+file(GLOB sources_list LIST_DIRECTORIES true children ${CMAKE_CURRENT_SOURCE_DIR}/*)
+foreach(dir ${sources_list})
+    IF(IS_DIRECTORY ${dir})
+        add_subdirectory(${dir})
+    ELSE()
+        CONTINUE()
+    ENDIF()
+endforeach()

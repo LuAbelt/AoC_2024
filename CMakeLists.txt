@@ -4,6 +4,7 @@ project(AoC_2024)
 set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(external)
+add_subdirectory(src)
 
 add_executable(AoC_2024 main.cpp)
 
