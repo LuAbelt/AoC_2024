@@ -1,12 +1,3 @@
-file(GLOB sources_list LIST_DIRECTORIES true children ${CMAKE_CURRENT_SOURCE_DIR}/*)
-foreach(dir ${sources_list})
-    IF(IS_DIRECTORY ${dir})
-        # add_subdirectory(${dir})
-    ELSE()
-        CONTINUE()
-    ENDIF()
-endforeach()
-
 foreach (day_num RANGE 01 25)
     set(day_str ${day_num})
     if (${day_num} LESS 10)
@@ -21,4 +12,28 @@ foreach (day_num RANGE 01 25)
     else()
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp.template/ DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/day${day_str}/main.cpp)
     endif()
+
+    add_executable(day${day_str} ${CMAKE_CURRENT_SOURCE_DIR}/day${day_str}/main.cpp)
+
+    add_custom_target( "Day${day_str}-Part-1-Sample"
+            COMMAND day${day_str} --one < ${PROJECT_SOURCE_DIR}/external/AoC-Inputs/2024/day${day_str}-sample
+            DEPENDS day${day_str}
+    )
+
+    add_custom_target( "Day${day_str}-Part-2-Sample"
+            COMMAND day${day_str} --two < ${PROJECT_SOURCE_DIR}/external/AoC-Inputs/2024/day${day_str}-sample
+            DEPENDS day${day_str}
+    )
+
+    add_custom_target( "Day${day_str}-Part-1"
+            COMMAND day${day_str} --one < ${PROJECT_SOURCE_DIR}/external/AoC-Inputs/2024/day${day_str}
+            DEPENDS day${day_str}
+    )
+
+    add_custom_target( "Day${day_str}-Part-2"
+            COMMAND day${day_str} --two < ${PROJECT_SOURCE_DIR}/external/AoC-Inputs/2024/day${day_str}
+            DEPENDS day${day_str}
+    )
+
+    target_link_libraries(day01 PRIVATE AoC_Lib)
 endforeach()
