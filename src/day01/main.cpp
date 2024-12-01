@@ -2,15 +2,67 @@
 #include "lib.h"
 
 using namespace std;
+
+pair<V<i64>,V<i64>> parseInputs() {
+    V<i64> input1, input2;
+
+    for(string line;getline(cin,line);)
+    {
+        stringstream ss(line);
+
+        i64 num1, num2;
+
+        ss >> num1 >> num2;
+
+        input1.push_back(num1);
+        input2.push_back(num2);
+    }
+
+    return make_pair(input1,input2);
+}
+
 void part1(){
-    int a,b,c;
+    auto input = parseInputs();
+    V<i64> list1 = input.first;
+    V<i64> list2 = input.second;
 
-    std::cin>>a>>b>>c;
+    sort(list1.begin(),list1.end());
+    sort(list2.begin(),list2.end());
 
-    std::cout<<"a: " << a << "; b: "<< b << "; c: "<<c;
+    i64 res = 0;
+
+    for(int i=0;i<list1.size();i++)
+    {
+        i64 distance = abs(list1[i] - list2[i]);
+
+        res += distance;
+    }
+
+    cout << res << endl;
 }
 
 void part2(){
+    auto input = parseInputs();
+    V<i64> list1 = input.first;
+    V<i64> list2 = input.second;
+
+    sort(list1.begin(),list1.end());
+    sort(list2.begin(),list2.end());
+
+    i64 res = 0;
+
+    map<i64,i64> counts;
+    for(auto num : list2)
+    {
+        counts[num] += 1;
+    }
+
+    for(auto num : list1)
+    {
+        res += counts[num]*num;
+    }
+
+    cout << res << endl;
 }
 
 int main(int argc, char* argv[]) {
