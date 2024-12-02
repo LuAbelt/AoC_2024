@@ -35,5 +35,5 @@ foreach (day_num RANGE 01 25)
             DEPENDS day${day_str}
     )
 
-    target_link_libraries(day01 PRIVATE AoC_Lib)
+    target_link_libraries(day${day_str} PRIVATE AoC_Lib)
 endforeach()
