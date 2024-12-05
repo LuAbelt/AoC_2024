@@ -119,35 +119,44 @@ void part2(){
   i64 res = 0;
   auto [pairs, pages] = parseInput();
 
-  auto [Adj, Id2Num, Num2Id] = buildTopoGraph(pairs);
+  // Build topological graph
+  map<i64, V<i64>> Rules;
+
+  for (auto &[first, second] : pairs) {
+    Rules[first] += second;
+  }
 
   for (auto PageOrder : pages) {
-    V<i64> IdVec;
-
+    //Build the adjacency list for this specific input
     set<i64> PageSet(PageOrder.begin(), PageOrder.end());
 
-    for (auto Page : PageOrder) {
-      IdVec += Num2Id[Page];
+    V<V<i64>> Adj(100);
+    for (auto& Page : PageOrder) {
+      for (auto Other : Rules[Page]) {
+        if (!PageSet.contains(Other)) {
+          continue;
+        }
+
+        Adj[Page] += Other;
+      }
     }
 
-    auto TopoOrderID = graphs::topological_sort(Adj,IdVec);
+    auto TopoOrder = graphs::full_topological_sort(Adj);
 
     V<i64> CorrectOrder;
 
-    for (auto ID : TopoOrderID) {
-      auto Num = Id2Num[ID];
-      if (!PageSet.contains(Num)) {
+    for (auto P : TopoOrder) {
+      if (!PageSet.contains(P)) {
         continue;
       }
-
-      CorrectOrder += Num;
+      CorrectOrder += P;
     }
 
     if (!VecEqual(CorrectOrder, PageOrder)) {
       res += CorrectOrder[CorrectOrder.size()/2];
-      //cout << "Invalid" << endl;
+      cout << "Invalid" << endl;
     } else {
-      //cout << "Valid" << endl;
+      cout << "Valid" << endl;
     }
   }
 
