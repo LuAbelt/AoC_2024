@@ -29,7 +29,7 @@ auto parseInput() {
   return make_tuple(Coord2(i64(maxX),i64(maxY)),Blocked,StartPos);
 }
 
-void part1(){
+void part1() {
   auto [MaxPos, Blocked, CurrentPos] = parseInput();
 
   Coord2 Dirs[4] = {Coord2(0,-1), Coord2(1,0),Coord2(0,1),Coord2(-1,0)};
@@ -50,187 +50,195 @@ void part1(){
   cout << Visited.size() << endl;
 }
 
+auto CompareByX = [](const Coord2 &C1, const Coord2 &C2) {
+  return C1.x() < C2.x();
+};
+
+auto CompareByY = [](const Coord2 &C1, const Coord2 &C2) {
+  return C1.y() < C2.y();
+};
+
+using CoordSetX = set<Coord2, decltype(CompareByX)>;
+using CoordSetY = set<Coord2, decltype(CompareByY)>;
+
+Coord2 Dirs[4] = {Coord2(0,-1), Coord2(1,0),Coord2(0,1),Coord2(-1,0)};
+
+Coord2 getNextPosition(const Coord2 &CurrentPos, st Direction,map<st, CoordSetY> &BlockedByX, map<st, CoordSetX> &BlockedByY) {
+  switch (Direction) {
+    case 0: {
+      // Moving upwards, try to find a bonk with lower y value
+
+      auto Bonk = ranges::lower_bound(BlockedByX[CurrentPos.x()],CurrentPos);
+
+      if (Bonk == BlockedByX[CurrentPos.x()].begin()) {
+        // We would exit the map
+        return {-1,-1};
+      }
+
+      --Bonk;
+
+      return (*Bonk)-Dirs[Direction];
+    }
+    break;
+    case 1: {
+      // Moving right, find first with higher x value
+      auto Bonk = ranges::lower_bound(BlockedByY[CurrentPos.y()], CurrentPos);
+
+      if (Bonk == BlockedByY[CurrentPos.y()].end()) {
+        // We would exit the map
+        return {-1,-1};
+      }
+
+      return (*Bonk)-Dirs[Direction];
+    }
+    break;
+    case 2:
+      // Moving down, find first with higher y value
+    {
+      auto Bonk = ranges::lower_bound(BlockedByX[CurrentPos.x()],CurrentPos);
+
+      if (Bonk == BlockedByX[CurrentPos.x()].end()) {
+        // We would exit the map
+        return {-1,-1};
+      }
+
+      return (*Bonk)-Dirs[Direction];
+    }
+    break;
+    case 3: {
+      // Moving left, find first with lower x value
+      auto Bonk = ranges::lower_bound(BlockedByY[CurrentPos.y()], CurrentPos);
+
+      if (Bonk == BlockedByY[CurrentPos.y()].begin()) {
+        // We would exit the map
+        return {-1,-1};
+      }
+
+      --Bonk;
+
+      return (*Bonk)-Dirs[Direction];
+    }
+    break;
+    default:
+      throw(runtime_error("Invalid Dir Index!"));
+  }
+}
+
+bool hasCircles(Coord2 Pos, st DirIdx, map<st, CoordSetY> &BlockedByX, map<st, CoordSetX> &BlockedByY, map<Coord2, bool> &Blocked) {
+  // Stores the coordinates where we already bonked and the new direction
+  map<pair<Coord2,st>, bool> Bonked;
+
+  while (true) {
+    Bonked[make_pair(Pos,DirIdx)] = true;
+
+    Pos = getNextPosition(Pos,DirIdx, BlockedByX, BlockedByY);
+
+    if (Pos == Coord2{-1,-1}) {
+      return false;
+    }
+
+    while (Blocked[Pos+Dirs[DirIdx]]) {
+      DirIdx = (DirIdx+1) % 4;
+    }
+
+    if (Bonked[make_pair(Pos,DirIdx)]) {
+      return true;
+    }
+  }
+}
+
+ostream& operator<<(ostream & lhs, add_const<transform::Coord<2>>::type & rhs) {
+  lhs << "(" << rhs.x() << "|" << rhs.y() << ")";
+  return lhs;
+};
+
+void testPositions(map<Coord2, bool> &Blocked, map<st, CoordSetY> &BlockedByX, map<st, CoordSetX> &BlockedByY) {
+  V<pair<Coord2, st>> StartPositions = {
+    {Coord2(0,0), 1},
+    {Coord2(0,0), 3},
+    {Coord2(4,0), 1},
+    {Coord2(4,0), 3},
+    {Coord2(8,0), 1},
+    {Coord2(8,0), 3},
+    {Coord2(4,1), 1},
+    {Coord2(4,1), 3},
+    {Coord2(8,1), 1},
+    {Coord2(8,1), 3},
+    {Coord2(9,0),0},
+    {Coord2(9,0),2},
+    {Coord2(9,4),0},
+    {Coord2(9,4),2},
+    {Coord2(9,8),0},
+    {Coord2(9,8),2},
+    {Coord2(8,4),0},
+    {Coord2(8,4),2},
+    {Coord2(8,8),0},
+    {Coord2(8,8),2},
+
+  };
+
+  for (const auto &[StartPos, DirIdx] : StartPositions) {
+    auto NextPos = getNextPosition(StartPos,DirIdx,BlockedByX, BlockedByY);
+    cout << "StartPos: " << StartPos << ", Direction: " << DirIdx << ". Next Position: " << NextPos << endl;
+  }
+}
+
 void part2(){
   auto [MaxPos, Blocked, CurrentPos] = parseInput();
+  const Coord2 StartPos = CurrentPos;
 
-  Coord2 Dirs[4] = {Coord2(0,-1), Coord2(1,0),Coord2(0,1),Coord2(-1,0)};
   st currentDir = 0;
 
-  map<st, V<Coord2>> BlockedByX;
-  map<st, V<Coord2>> BlockedByY;
+  map<st, CoordSetY> BlockedByX;
+  map<st, CoordSetX> BlockedByY;
 
   for (const auto [coord, _] : Blocked) {
     BlockedByX[coord.x()] += coord;
     BlockedByY[coord.y()] += coord;
   }
 
-  set<array<Coord2,4>> Candidates;
+  set<Coord2> Candidates;
 
-  for (const auto&[CurrentCoord, _] : Blocked) {
-    if (CurrentCoord.x() == 0) {
-      continue;
-    }
-    // Checks cases in which lower left/right corner is missing
-    for (const Coord2 &UpperRight : BlockedByY[CurrentCoord.y()+1]) {
-      const Coord2 &UpperLeft = CurrentCoord;
-      if (UpperRight.x() <= UpperLeft.x()) {
-        continue;
-      }
+  map<Coord2, bool> Visited;
 
-      // Check if a potential lower right exists
-      for (const Coord2 &LowerRight : BlockedByX[UpperRight.x()-1]) {
-        if (LowerRight.y() <= UpperRight.y()) {
-          continue;
-        }
+  st res = 0;
 
-        if (UpperLeft.x() == 0) {
-          continue;
-        }
-
-        // Calculate lower left corner position
-        Coord2 LowerLeft(UpperLeft.x()-1,LowerRight.y()-1);
-
-        // Check if coord is already blocked and/or starting position
-        if (LowerLeft == CurrentPos || Blocked[LowerLeft]) {
-          continue;
-        }
-
-        Candidates += array<Coord2,4>{UpperLeft, UpperRight, LowerRight, LowerLeft};
-      }
-
-      // Same but for lower left
-      for (const Coord2 &LowerLeft : BlockedByX[UpperLeft.x()-1]) {
-        if (LowerLeft.y() <= UpperLeft.y()) {
-          continue;
-        }
-
-        // Calculate lower right corner position
-        Coord2 LowerRight(UpperRight.x()-1,LowerLeft.y()+1);
-
-        Candidates += array<Coord2,4>{UpperLeft, UpperRight, LowerRight, LowerLeft};
-
-        // Check if coord is already blocked and/or starting position
-        if (LowerRight == CurrentPos || Blocked[LowerRight]) {
-          continue;
-        }
-
-        Candidates += array<Coord2,4>{UpperLeft, UpperRight, LowerRight, LowerLeft};
-      }
-    }
-
-    // Check cases in which upper right is missing, by fixing lower left
-    for (const Coord2 &LowerLeft : BlockedByX[CurrentCoord.x()-1]) {
-      const Coord2 &UpperLeft = CurrentCoord;
-      if (LowerLeft.y() <= UpperLeft.y()) {
-        continue;
-      }
-
-      for (const Coord2 &LowerRight : BlockedByY[LowerLeft.y()+1]) {
-        if (LowerRight.x() <= LowerLeft.x()) {
-          continue;
-        }
-
-        Coord2 UpperRight(LowerRight.x()+1,UpperLeft.y()+1);
-
-        if ( UpperRight.x()>=MaxPos.x() || UpperRight == CurrentPos || Blocked[UpperRight]) {
-          continue;
-        }
-
-        Candidates += array<Coord2,4>{UpperLeft, UpperRight, LowerRight, LowerLeft};
-      }
-    }
-
-    // Cases in which the upper left corner is missing
-    const Coord2 &UpperRight = CurrentCoord;
-    for (const Coord2 &LowerRight : BlockedByX[UpperRight.x()-1]) {
-      if (LowerRight.y()<=UpperRight.y()) {
-        continue;
-      }
-
-      for (const Coord2 &LowerLeft : BlockedByY[LowerRight.y()-1]) {
-        if (LowerLeft.x()>=LowerRight.x()) {
-          continue;
-        }
-
-        //Calculate Upper Left Corner position
-        Coord2 UpperLeft(LowerLeft.x()+1,UpperRight.y()-1);
-
-        if (UpperLeft == CurrentPos || Blocked[UpperLeft]) {
-          continue;
-        }
-
-        Candidates += array<Coord2, 4>{UpperLeft, UpperRight, LowerRight, LowerLeft};
-      }
-    }
-  }
-
-  map<pair<Coord2,st>, bool> Visited;
   while (CurrentPos.x()>=0 && CurrentPos.x() < MaxPos.x() && CurrentPos.y()>= 0 && CurrentPos.y()<MaxPos.y()) {
     while (Blocked[CurrentPos+Dirs[currentDir]]) {
-      Visited[make_pair(CurrentPos,currentDir)] = true;
+      Visited[CurrentPos] = true;
       currentDir = (currentDir + 1)%4;
     }
 
-    Visited[make_pair(CurrentPos,currentDir)] = true;
+    Visited[CurrentPos] = true;
+
+    {
+      //Check whether blocking the space in front of us creates a loop
+      auto BlockedPos = CurrentPos+Dirs[currentDir];
+
+      if ( BlockedPos.x() >= 0 && BlockedPos.y() >= 0
+        && BlockedPos.x() < MaxPos.x() && BlockedPos.y() < MaxPos.y()
+        && BlockedPos != StartPos
+        && !Visited[BlockedPos]) {
+        Blocked[BlockedPos] = true;
+        BlockedByY[BlockedPos.y()] += BlockedPos;
+        BlockedByX[BlockedPos.x()] += BlockedPos;
+
+        // At least one space should still be free, otherwise we just trapped in the guard
+        if (any_of(std::begin(Dirs), std::end(Dirs),[&Blocked = Blocked, &CurrentPos = CurrentPos](auto Dir) {
+          return !Blocked[CurrentPos+Dir];
+        })) {
+          if (hasCircles(CurrentPos, (currentDir+1)%4, BlockedByX, BlockedByY, Blocked)) {
+            ++res;
+          }
+        }
+
+        BlockedByX[BlockedPos.x()].erase(BlockedPos);
+        BlockedByY[BlockedPos.y()].erase(BlockedPos);
+        Blocked[CurrentPos+Dirs[currentDir]] = false;
+      }
+    }
 
     CurrentPos += Dirs[currentDir];
-  }
-
-  i64 res = 0;
-
-  for (auto &Candidate : Candidates) {
-    for (st Direction = 0; Direction < 4; ++Direction) {
-      if (!Visited[make_pair(Candidate[Direction]-Dirs[Direction], Direction)]) {
-        continue;
-      }
-
-      // Additional Validity checking
-      cout << "Candidate test: ";
-      for (st Direction = 0; Direction < 4; ++Direction) {
-        cout << "(" << Candidate[Direction].x() << "|" << Candidate[Direction].y() << ") ";
-      }
-      cout << endl;
-      // Check that all edges are actually traversable
-      Coord2 UpperLeft(Candidate[0].x(),Candidate[1].y());
-      Coord2 LowerRight(Candidate[2].x(),Candidate[3].y());
-      // Left Border
-      bool traversable = ranges::all_of(
-          BlockedByX[UpperLeft.x()], [&UpperLeft,LowerRight](Coord2 C) {
-        return C.y() < UpperLeft.y() || C.y() > LowerRight.y();
-      });
-
-      // Right Border
-      traversable &= ranges::all_of(
-        BlockedByX[LowerRight.x()], [&UpperLeft,&LowerRight](Coord2 C) {
-          return C.y() < UpperLeft.y() || C.y() > LowerRight.y();
-        }
-      );
-
-      // Upper border
-      traversable &= ranges::all_of(
-        BlockedByY[UpperLeft.y()], [&UpperLeft,&LowerRight](Coord2 C) {
-          return C.x() < UpperLeft.x() || C.x() > LowerRight.x();
-        }
-      );
-
-      // Lower border
-      traversable &= ranges::all_of(
-        BlockedByY[LowerRight.y()], [&UpperLeft,&LowerRight](Coord2 C) {
-          return C.x() < UpperLeft.x() || C.x() > LowerRight.x();
-        }
-      );
-      if (!traversable){
-        break;
-      }
-
-      cout << "Candidate viable: ";
-      for (st Direction = 0; Direction < 4; ++Direction) {
-        cout << "(" << Candidate[Direction].x() << "|" << Candidate[Direction].y() << ") ";
-      }
-      cout << endl;
-      ++res;
-      break;
-    }
   }
 
   cout << res << endl;
