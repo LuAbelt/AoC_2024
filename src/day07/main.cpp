@@ -74,42 +74,22 @@ enum class Operand {
 i64 evaluate(const V<i64> &Terms, const V<Operand> &Operands) {
     i64 Res = Terms[0];
     auto CurNum = std::next(Terms.begin());
-    auto Operand = Operands.begin();
 
-    while (*Operand == Operand::CAT && Operand != Operands.end()) {
-        st NumWidth = trunc(log10(*CurNum))+1;
-
-        Res *= pow(10,NumWidth);
-        Res += *CurNum;
-
-        ++Operand, ++CurNum;
-    }
-
-    while (Operand!=Operands.end()) {
-        auto Op = *Operand;
-        i64 NextNum = *CurNum;
-        ++Operand;
-
-        while (*Operand == Operand::CAT && Operand != Operands.end()) {
-            ++CurNum;
-            st NumWidth = trunc(log10(*CurNum))+1;
-
-            NextNum *= pow(10,NumWidth);
-            NextNum += *CurNum;
-            ++Operand;
-        }
-
+    for (auto Op : Operands) {
         switch (Op) {
             case Operand::ADD:
-                Res += NextNum;
+                Res += *CurNum;
                 break;
             case Operand::MUL:
-                Res *= NextNum;
-                break;
-            default:
-                throw runtime_error("Operator should not occur here!");
-        }
+                Res *= *CurNum;
+            break;
+            case Operand::CAT:
+                st NumWidth = trunc(log10(*CurNum))+1;
 
+                Res *= pow(10,NumWidth);
+                Res += *CurNum;
+                break;
+        }
         ++CurNum;
     }
 
